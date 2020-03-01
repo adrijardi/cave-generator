@@ -12,6 +12,9 @@ artifacts:
     'frontend/target/scala-2.13/classes/'
 cache:
   paths:
+    - '/root/.sbt/**/*'
     - '/root/.ivy2/cache/**/*'
     - '/root/.cache/**/*'
     - 'target/**/*'
+    - 'js/target/**/*'
+    - 'web/target/**/*'
