@@ -3,4 +3,5 @@ local.sbt
 .metals/
 .bloop/
 .idea/
+stacks.sh
 

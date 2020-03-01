@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
-Description: >
-  Meta pipeline to define continuous deployment pipelines for Gollum
+Description: Meta pipeline to deploy the caves generator
 
 Parameters:
   PipelineName:
@@ -17,15 +16,6 @@ Parameters:
   Repository:
     Description: Github repository of the service to build, must belong to ArtosSystems' organization
     Type: String
-
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      - Label:
-          default: "CodePipeline Settings"
-        Parameters:
-          - PipelineName
-#          - Email
 
 Resources:
   ArtifactStoreBucket:
@@ -47,15 +37,11 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       AliasTarget:
-#        DNSName: cavegen.coding42.com.s3-website-eu-west-1.amazonaws.com #!GetAtt [WebBucket, RegionalDomainName]
-        DNSName: !GetAtt [WebBucket, WebsiteURL]
-#        EvaluateTargetHealth: false
+        DNSName: s3-website-eu-west-1.amazonaws.com
         HostedZoneId: Z1BKCTXD74EZPE
       HostedZoneName: coding42.com.
       Name: !Ref WebBucketName
-#      Region: eu-west-1
       Type: A
-#      SetIdentifier:
 
   BuildProject:
     Type: AWS::CodeBuild::Project
@@ -75,30 +61,6 @@ Resources:
       TimeoutInMinutes: 20
       Artifacts:
         Type: CODEPIPELINE
-
-#  Deploy:
-#    Type: AWS::CodeBuild::Project
-#    Properties:
-#      Name: gollum-deploy
-#      Environment:
-#        ComputeType: BUILD_GENERAL1_SMALL
-#        Image: hashicorp/terraform:0.12.12
-#        Type: LINUX_CONTAINER
-#      LogsConfig:
-#        CloudWatchLogs:
-#          GroupName: !Ref PipelineName
-#          Status: ENABLED
-#      ServiceRole: !Ref BuildRole
-#      Source:
-#        BuildSpec: deployment/dev-buildspec.yml
-#        Type: CODEPIPELINE
-#      Tags:
-#        - Key: environment
-#          Value: tooling
-#      TimeoutInMinutes: 20
-#      Artifacts:
-#        ArtifactIdentifier: plan
-#        Type: CODEPIPELINE
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -157,28 +119,8 @@ Resources:
             Configuration:
               BucketName: !Ref WebBucketName
               Extract: true
+              CannedACL: public-read
             RunOrder: '1'
-
-  CFNRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: ['sts:AssumeRole']
-            Effect: Allow
-            Principal:
-              Service: [cloudformation.amazonaws.com]
-        Version: '2012-10-17'
-      Path: /
-      Policies:
-        - PolicyName: CloudFormationRole
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - 'ec2:*'
-                Effect: Allow
-                Resource: '*'
 
   PipelineRole:
     Type: AWS::IAM::Role
@@ -259,46 +201,3 @@ Resources:
                   - '*'
                 Effect: Allow
                 Resource: '*'
-
-#  ProdDeployRole:
-#    Type: AWS::IAM::Role
-#    Properties:
-#      AssumeRolePolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Action: ['sts:AssumeRole']
-#            Effect: Allow
-#            Principal:
-#              Service: [codebuild.amazonaws.com]
-#      Path: /
-#      Policies:
-#        - PolicyName: CodePipelineAccess
-#          PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#              - Action:
-#                  - 'logs:CreateLogGroup'
-#                  - 'logs:CreateLogStream'
-#                  - 'logs:PutLogEvents'
-#                Effect: Allow
-#                Resource: '*'
-#              - Action: '*'
-#                Effect: Allow
-#                Resource:
-#                  - !Join ['', ['arn:aws:s3:::', !Ref ArtifactStoreBucket, /*]]
-#              - Action: '*'
-#                Effect: Allow
-#                Resource:
-#                  - 'arn:aws:s3:::terraform.artos.io'
-#                  - 'arn:aws:s3:::terraform.artos.io/*'
-#              - Action:
-#                  - 'ecs:*'
-#                Effect: Allow
-#                Resource: '*'
-#              - Action:
-#                  - '*'
-#                Effect: Allow
-#                Resource: '*'
-
-
-# Look at https://github.com/adcreare/cloudformation/tree/master/code-pipeline-cross-account
