@@ -9,7 +9,7 @@ artifacts:
   files:
     - '**/*'
   base-directory:
-    'frontend/target/scala-2.13/classes/'
+    'web/target/web/public/main/'
 cache:
   paths:
     - '/root/.sbt/**/*'
