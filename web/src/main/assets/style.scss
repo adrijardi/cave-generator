@@ -1,0 +1,11 @@
+$fa-font-path: "lib/font-awesome/webfonts";
+@import "lib/font-awesome/scss/fontawesome.scss";
+@import "lib/font-awesome/scss/solid.scss";
+
+.info {
+  @extend %fa-icon;
+  @extend .fas;
+  &:before {
+    content: fa-content($fa-var-info);
+  }
+}

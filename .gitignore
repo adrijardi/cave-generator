@@ -1,0 +1,6 @@
+target/
+local.sbt
+.metals/
+.bloop/
+.idea/
+

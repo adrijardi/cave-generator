@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - sbt -Dsbt.log.noformat=true assets
+#      - sbt -Dsbt.log.noformat=true fullOptJS
+artifacts:
+  files:
+    - 'web/target/web/public/main/**/*'
+cache:
+  paths:
+    - '/root/.ivy2/cache/**/*'
+    - '/root/.cache/**/*'
+    - 'target/**/*'
