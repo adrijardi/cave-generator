@@ -35,7 +35,8 @@ libraryDependencies += ScalablyTyped.P.pad
 // Workaround for https://github.com/Atry/scalajs-all-in-one-template/issues/9
 // You don't have to manually set the npmDependencies
 // once the https://github.com/adaltas/node-pad/pull/16 is included in a future release.
-npmDependencies in Compile += "pad" -> "2.3 <="
+npmDependencies in Compile += "pad"   -> "2.3 <="
+npmDependencies in Compile += "three" -> "0.114.0"
 
 requireJsDomEnv in Test := true
 
