@@ -1097,6 +1097,62 @@ class MeshLambertMaterial(parameters: MeshLambertMaterialParameters = js.native)
 }
 
 @js.native
+trait MeshStandardMaterialParameters extends MaterialParameters {
+  var color: Double              = js.native
+  var ambient: Double            = js.native
+  var emissive: Double           = js.native
+  var wrapAround: Boolean        = js.native
+  var wrapRGB: Vector3           = js.native
+  var map: Texture               = js.native
+  var lightMap: Texture          = js.native
+  var specularMap: Texture       = js.native
+  var alphaMap: Texture          = js.native
+  var envMap: Texture            = js.native
+  var combine: Combine           = js.native
+  var reflectivity: Double       = js.native
+  var refractionRatio: Double    = js.native
+  var fog: Boolean               = js.native
+  var shading: Shading           = js.native
+  var wireframe: Boolean         = js.native
+  var wireframeLinewidth: Double = js.native
+  var wireframeLinecap: String   = js.native
+  var wireframeLinejoin: String  = js.native
+  var vertexColors: Colors       = js.native
+  var skinning: Boolean          = js.native
+  var morphTargets: Boolean      = js.native
+  var morphNormals: Boolean      = js.native
+}
+
+@js.native
+@JSImport("three", "MeshStandardMaterial")
+class MeshStandardMaterial(parameters: MeshStandardMaterialParameters = js.native) extends Material {
+  var color: Color                          = js.native
+  var ambient: Color                        = js.native
+  var emissive: Color                       = js.native
+  var wrapAround: Boolean                   = js.native
+  var wrapRGB: Vector3                      = js.native
+  var map: Texture                          = js.native
+  var lightMap: Texture                     = js.native
+  var specularMap: Texture                  = js.native
+  var alphaMap: Texture                     = js.native
+  var envMap: Texture                       = js.native
+  var combine: Combine                      = js.native
+  var reflectivity: Double                  = js.native
+  var refractionRatio: Double               = js.native
+  var fog: Boolean                          = js.native
+  var shading: Shading                      = js.native
+  var wireframe: Boolean                    = js.native
+  var wireframeLinewidth: Double            = js.native
+  var wireframeLinecap: String              = js.native
+  var wireframeLinejoin: String             = js.native
+  var vertexColors: Colors                  = js.native
+  var skinning: Boolean                     = js.native
+  var morphTargets: Boolean                 = js.native
+  var morphNormals: Boolean                 = js.native
+  override def clone(): MeshLambertMaterial = js.native
+}
+
+@js.native
 trait MeshNormalMaterialParameters extends MaterialParameters {
   var shading: Shading           = js.native
   var wireframe: Boolean         = js.native

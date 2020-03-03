@@ -9,16 +9,8 @@ object Cave extends scalajs.js.JSApp {
 
   @JSExport
   def main(): Unit = {
-//    this.bindView()
+    val gen = CaveGenerator.create((20, 25), 3, 3)
 
-    val gen = CaveGenerator.create((100, 100), 3)
-
-//    val gen = Vector(
-//      Vector(true, true),
-//      Vector(true, true),
-//      Vector(true, true),
-//      Vector(true, true)
-//    )
     val container =
       dom.document.getElementById("container").asInstanceOf[HTMLElement]
     new CaveVisualizerScene(

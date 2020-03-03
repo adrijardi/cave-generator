@@ -2,10 +2,10 @@ import scala.util.Random
 
 object CaveGenerator {
 
-  def create(size: (Int, Int), smoothSteps: Int): Vector[Vector[Boolean]] = {
+  def create(size: (Int, Int), smoothSteps: Int, wallsMargin: Int): Vector[Vector[Boolean]] = {
     val smoothed =
       (1 to smoothSteps).foldLeft(rnd(size))((prev, _) => smooth(prev))
-    val walled = wallBorders(smoothed)
+    val walled = wallBorders(smoothed, wallsMargin)
     update(walled)(_._3)
   }
 
@@ -32,10 +32,11 @@ object CaveGenerator {
     cave.map(_.map(fn))
 
   private def wallBorders(
-    cave: Vector[Vector[(Int, Int, Boolean)]]
+    cave: Vector[Vector[(Int, Int, Boolean)]],
+    wallsMargin: Int
   ): Vector[Vector[(Int, Int, Boolean)]] =
     update(cave) { elem =>
-      if (elem._1 == 0 || elem._2 == 0 || elem._1 == cave.length - 1 || elem._2 == cave.head.length - 1)
+      if (elem._1 < wallsMargin || elem._2 < wallsMargin || elem._1 > cave.length - 1 - wallsMargin || elem._2 > cave.head.length - 1 - wallsMargin)
         elem.copy(_3 = true)
       else elem
     }
