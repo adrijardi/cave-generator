@@ -1,6 +1,6 @@
 package org.denigma.threejs.extensions
 
-import org.denigma.threejs.{PerspectiveCamera, Renderer, Scene}
+import org.denigma.threejs.{PerspectiveCamera, Renderer, Scene, WebGLRenderer}
 import org.scalajs.dom
 import org.scalajs.dom.raw.HTMLElement
 
@@ -24,6 +24,13 @@ trait SceneContainer {
 
   def aspectRatio: Double = width / height
 
+  var rendering = true
+
+  def stopRender() = {
+    rendering = false
+    renderer.asInstanceOf[WebGLRenderer].clear(true, true, true) // TODO dirty
+  }
+
   protected def initRenderer(): RendererType
 
   protected def initCamera() = {
@@ -35,14 +42,17 @@ trait SceneContainer {
     camera
   }
 
-  protected def onEnterFrameFunction(double: Double): Unit = {
-    onEnterFrame()
-    render()
-  }
+  protected def onEnterFrameFunction(double: Double): Unit =
+    if (rendering) {
+      onEnterFrame()
+      render()
+    }
 
   def onEnterFrame(): Unit =
     renderer.render(scene, camera)
 
-  def render(): Int = dom.window.requestAnimationFrame(onEnterFrameFunction _)
+  private def render(): Int = dom.window.requestAnimationFrame(onEnterFrameFunction _)
+
+  def startRender(): Int = render()
 
 }

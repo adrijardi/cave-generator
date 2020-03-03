@@ -5,51 +5,49 @@ import org.scalajs.dom
 import org.scalajs.dom.raw.{Element, Event, HTMLElement, MouseEvent}
 
 import scala.scalajs.js
+
 object HoverState {
   trait State
-  case object Zoom extends State
+  case object Zoom   extends State
   case object Rotate extends State
-  case object Pan extends State
-  case object Calm extends State
-  case object Move extends State
+  case object Pan    extends State
+  case object Calm   extends State
+  case object Move   extends State
 }
 
-class HoverControls(camera: Camera,
-                    element: Element,
-                    val center: Vector3 = new Vector3())
-    extends RotateControls {
+class HoverControls(camera: Camera, element: Element, val center: Vector3 = new Vector3()) extends RotateControls {
 
-  var userRotate = true
+  var userRotate      = true
   var userRotateSpeed = 1.0
 
-  var userPan = true
+  var userPan      = true
   var userPanSpeed = 2.0
 
-  var autoRotate = false
+  var autoRotate      = false
   var autoRotateSpeed = 2.0 // 30 seconds per round when fps is 60
 
-  var minPolarAngle = 0 // radians
+  var minPolarAngle = 0       // radians
   var maxPolarAngle = Math.PI // radians
 
   object Keys {
 
-    val LEFT = 37
-    val UP = 38
-    val RIGHT = 39
+    val LEFT   = 37
+    val UP     = 38
+    val RIGHT  = 39
     val BOTTOM = 40
     val ROTATE = 65
-    val ZOOM = 83
-    val PAN = 68
+    val ZOOM   = 83
+    val PAN    = 68
   }
 
-  protected var EPS = 0.000001
+  protected var EPS              = 0.000001
   protected var PIXELS_PER_ROUND = 1800
 
   protected var rotateStart = new Vector2()
-  protected var rotateEnd = new Vector2()
+  protected var rotateEnd   = new Vector2()
   protected var rotateDelta = new Vector2()
 
-  protected var phiDelta: Double = 0
+  protected var phiDelta: Double   = 0
   protected var thetaDelta: Double = 0
 
   var lastPosition = new Vector3()
@@ -60,9 +58,10 @@ class HoverControls(camera: Camera,
 
   def rotateLeft(angle: Double = autoRotationAngle()): Unit =
     thetaDelta -= angle
+
   def rotateRight(angle: Double = autoRotationAngle()): Unit =
     thetaDelta += angle
-  def rotateUp(angle: Double = autoRotationAngle()): Unit = phiDelta -= angle
+  def rotateUp(angle: Double = autoRotationAngle()): Unit   = phiDelta -= angle
   def rotateDown(angle: Double = autoRotationAngle()): Unit = phiDelta += angle
 
   def pan(distance: Vector3): Vector3 = {
@@ -155,7 +154,7 @@ class HoverControls(camera: Camera,
     rotateDelta.subVectors(rotateEnd, rotateStart)
 
     val rLeft = 2 * Math.PI * rotateDelta.x / PIXELS_PER_ROUND * userRotateSpeed
-    val rUp = 2 * Math.PI * rotateDelta.y / PIXELS_PER_ROUND * userRotateSpeed
+    val rUp   = 2 * Math.PI * rotateDelta.y / PIXELS_PER_ROUND * userRotateSpeed
 
     rotateLeft(rLeft)
     rotateUp(rUp)
@@ -172,7 +171,7 @@ class HoverControls(camera: Camera,
       case HoverState.Zoom => computeZoom(event)
 
       case HoverState.Pan =>
-        val evd = event.asInstanceOf[js.Dynamic]
+        val evd               = event.asInstanceOf[js.Dynamic]
         val movementX: Double = evd.movementX.asInstanceOf[Double]
         val movementY: Double = evd.movementY.asInstanceOf[Double]
         this.pan(new Vector3(-movementX, movementY, 0))
@@ -184,9 +183,8 @@ class HoverControls(camera: Camera,
     }
   }
 
-  def onMouseMove(event: MouseEvent) = {
+  def onMouseMove(event: MouseEvent) =
     rotateOnMove(event)
-  }
 
   def onContextMenu(event: Event): js.Any = {
     event.preventDefault()

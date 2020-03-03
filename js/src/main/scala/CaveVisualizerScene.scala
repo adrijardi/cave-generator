@@ -1,29 +1,11 @@
-import cave.{MarchingSquares, Square, Utils}
-import org.denigma.threejs.{
-  AmbientLight,
-  BoxGeometry,
-  Color,
-  DirectionalLight,
-  Face3,
-  Geometry,
-  Mesh,
-  MeshBasicMaterial,
-  MeshLambertMaterial,
-  MeshLambertMaterialParameters,
-  MeshPhongMaterial,
-  MeshStandardMaterial,
-  MeshStandardMaterialParameters,
-  SpotLight,
-  THREE,
-  Vector3
-}
+import cave.{MarchingSquares, Square}
 import org.denigma.threejs.extensions.Container3D
+import org.denigma.threejs._
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.collection.immutable
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.scalajs.js.JSON
 
 class CaveVisualizerScene(
   val container: HTMLElement,

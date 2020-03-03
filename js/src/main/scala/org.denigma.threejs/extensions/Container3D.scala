@@ -18,7 +18,7 @@ trait Container3D extends SceneContainer {
   val absolute     = "absolute"
   val positionZero = "0"
 
-  protected def initRenderer() = {
+  protected def initRenderer(): WebGLRenderer = {
     val params = Dynamic
       .literal(
         antialias = true,
