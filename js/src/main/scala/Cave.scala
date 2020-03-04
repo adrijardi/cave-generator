@@ -7,7 +7,14 @@ import scala.util.Try
 object Cave {
   lazy val elem: HTMLElement = dom.document.body
 
-  case class Parameters(width: Int = 25, height: Int = 20, wallMargin: Int = 3, smoothSteps: Int = 3)
+  case class Parameters(
+    width: Int = 25,
+    height: Int = 20,
+    wallMargin: Int = 3,
+    smoothSteps: Int = 3,
+    minRoomSize: Int = 0,
+    createPassages: Boolean = true,
+  )
 
   def main(args: Array[String]): Unit = {
     val container =
@@ -41,11 +48,21 @@ object Cave {
         .getOrElse(defaults.wallMargin),
       Try(dom.document.getElementById("smoothSteps").asInstanceOf[html.Input].value.toInt)
         .getOrElse(defaults.smoothSteps),
+      Try(dom.document.getElementById("minRoomSize").asInstanceOf[html.Input].value.toInt)
+        .getOrElse(defaults.minRoomSize),
+      Try(dom.document.getElementById("createPassages").asInstanceOf[html.Input].checked)
+        .getOrElse(defaults.createPassages),
     )
   }
 
   private def createCave(container: HTMLElement, parameters: Parameters) = {
-    val gen = CaveGenerator.create((parameters.height, parameters.width), parameters.smoothSteps, parameters.wallMargin)
+    val gen = CaveGenerator.create(
+      (parameters.height, parameters.width),
+      parameters.smoothSteps,
+      parameters.wallMargin,
+      parameters.minRoomSize,
+      parameters.createPassages
+    )
     new CaveVisualizerScene(
       container,
       container.clientWidth,

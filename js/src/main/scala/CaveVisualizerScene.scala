@@ -1,6 +1,6 @@
 import cave.{MarchingSquares, Square}
 import org.denigma.threejs.extensions.Container3D
-import org.denigma.threejs._
+import org.denigma.threejs.{Side, _}
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.collection.immutable
@@ -21,17 +21,18 @@ class CaveVisualizerScene(
   private val topologies: List[Square.Topology[Vector3]] = MarchingSquares(data, 1d, new Vector3(0, 0, 0))
   val vertices: List[List[Vector3]]                      = topologies.map(_.vertices)
 
-  def materialParams(color: Int): MeshStandardMaterialParameters =
+  def materialParams(color: Int, sides: org.denigma.threejs.Side = THREE.FrontSide): MeshStandardMaterialParameters =
     js.Dynamic
       .literal(
         color = new Color(color),
 //        emissive = new Color(0x2a0000),
 //        wireframe = true
+        side = sides,
       )
       .asInstanceOf[MeshStandardMaterialParameters]
 
   val wallsMaterial = new MeshStandardMaterial(materialParams(0x666633))
-  val floorMaterial = new MeshStandardMaterial(materialParams(0x333300))
+  val floorMaterial = new MeshStandardMaterial(materialParams(0x333300, THREE.DoubleSide))
 
 //  val materials = List(
 //    material,
