@@ -1,0 +1,8 @@
+{
+  "@aws-cdk/core:enableStackNameDuplicates": "true",
+  "aws-cdk:enableDiffNoFail": "true",
+  "hosted-zone:account=560736504899:domainName=coding42.com:region=eu-west-1": {
+    "Id": "/hostedzone/Z27AD23N8EGKKH",
+    "Name": "coding42.com."
+  }
+}
