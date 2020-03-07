@@ -1,67 +1,38 @@
+import ThreeUtils._
 import cave.{MarchingSquares, Square}
 import org.denigma.threejs._
 import org.denigma.threejs.extensions.Container3D
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.collection.immutable
-import scala.scalajs.js
+import scala.concurrent.{ExecutionContext, Promise}
+import scala.scalajs.concurrent.JSExecutionContext
+import scala.scalajs.js.Array
 import scala.scalajs.js.JSConverters._
 
 class CaveVisualizerScene(
   val container: HTMLElement,
   val width: Double,
   val height: Double,
-  data: immutable.Vector[immutable.Vector[Boolean]]
+  data: immutable.Vector[immutable.Vector[Boolean]],
+  val nodeSize: Double = 1d,
+  val wallHeight: Double = 2d,
+  val textureOffset: (Double, Double) = (0, 0),
+  val textureScale: (Double, Double) = (10, 10),
 ) extends Container3D {
 
   override def distance: Double = 200
   val caveHeight                = data.length
   val caveWidth                 = data.head.length
 
-  private val topologies: List[Square.Topology[Vector3]] = MarchingSquares(data, 1d, new Vector3(0, 0, 0))
+  private val topologies: List[Square.Topology[Vector3]] = MarchingSquares(data, nodeSize, new Vector3(0, 0, 0))
   val vertices: List[List[Vector3]]                      = topologies.map(_.vertices)
 
-  def materialParams(color: Int, sides: org.denigma.threejs.Side = THREE.FrontSide): MeshStandardMaterialParameters =
-    js.Dynamic
-      .literal(
-        color = new Color(color),
-        //        emissive = new Color(0x2a0000),
-        //        wireframe = true
-        side = sides,
-      )
-      .asInstanceOf[MeshStandardMaterialParameters]
+  implicit val ec: ExecutionContext = JSExecutionContext.queue
 
-  val wallsMaterial = new MeshStandardMaterial(materialParams(0x666633))
-  val floorMaterial = new MeshStandardMaterial(materialParams(0x333300, THREE.DoubleSide))
+  val texturePromise = Promise[Texture]()
 
-  //  val materials = List(
-  //    material,
-  //    new MeshLambertMaterial(materialParams(0xffff00)),
-  //    new MeshLambertMaterial(materialParams(0x00ffcc)),
-  //    new MeshLambertMaterial(materialParams(0xff00ff)),
-  //    new MeshLambertMaterial(materialParams(0xffff66)),
-  //    new MeshLambertMaterial(materialParams(0xff66ff)),
-  //    new MeshLambertMaterial(materialParams(0x66ffff))
-  //  )
-
-  val topWall = vertices.flatMap((vertices: List[Vector3]) => createEasyGeometry(vertices))
-
-  // TODO utils
-  def mergeGeometries(geom: List[Geometry]): Geometry = {
-    val result = geom.reduce((a, b) => {
-      a.merge(b, new Matrix4(), 0)
-      a
-    })
-    result.mergeVertices()
-    result
-  }
-
-  scene.add(
-    new Mesh(
-      mergeGeometries(topWall),
-      wallsMaterial
-    )
-  )
+  new TextureLoader().load("textures/walls.jpg", texturePromise.success)
 
   val light = new DirectionalLight(0xffffff, 2)
   light.position.set(100, 100, -100) //.normalize()
@@ -71,44 +42,40 @@ class CaveVisualizerScene(
   light.position.set(.5, 3, 1).normalize()
   scene.add(light2)
 
-  //  val geometry = new BoxGeometry(10, 10, 10, 1, 1, 1);
-  ////  val material = new MeshBasicMaterial({ color: 0x00ff00 });
-  //  val cube = new Mesh(geometry, material);
-  //  scene.add(cube);
-
-  // Walls
-
-  type Side = (Vector3, Vector3)
-
-  val walls      = topologies.flatMap(_.walls)
-  val wallHeight = 2d
-
-  def sideWallMesh(side: Side): List[Vector3] = List(
-    side._1,
-    side._2,
-    new Vector3(side._2.x, side._2.y, -wallHeight),
-    new Vector3(side._1.x, side._1.y, -wallHeight),
-  )
-
-  val wallGeometries = walls.map(sideWallMesh).flatMap { vertices =>
-    createGeometry(vertices, List(new Face3(0, 1, 2), new Face3(2, 3, 0)))
+  val topWall: Geometry = mergeGeometries {
+    vertices.flatMap((vertices: List[Vector3]) => createEasyGeometry(vertices))
   }
 
-  scene.add(new Mesh(mergeGeometries(wallGeometries), wallsMaterial))
+  val wallGeometries: Geometry = mergeGeometries {
+    topologies
+      .flatMap(_.walls)
+      .map(sideWallMesh)
+      .flatMap { vertices =>
+        createGeometry(vertices, List(new Face3(0, 1, 2), new Face3(2, 3, 0)))
+      }
+  }
 
-  // END walls
-
-  val floorMesh = createMeshRaw(
+  val floorMesh: Option[Geometry] = createEasyGeometry(
     List(
       new Vector3(-caveWidth / 2, -caveHeight / 2, -wallHeight),
       new Vector3(caveWidth / 2, -caveHeight / 2, -wallHeight),
       new Vector3(caveWidth / 2, caveHeight / 2, -wallHeight),
       new Vector3(-caveWidth / 2, caveHeight / 2, -wallHeight),
-    ),
-    List(new Face3(0, 1, 2), new Face3(2, 3, 0)),
-    floorMaterial
+    )
   )
-  floorMesh.foreach(scene.add)
+
+  texturePromise.future.map { texture =>
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+
+    val wallsTopMaterial = new MeshStandardMaterial(materialParams(0xffffff, texture = Some(texture)))
+    val wallsMaterial    = new MeshStandardMaterial(materialParams(0x666666))
+    val floorMaterial    = new MeshStandardMaterial(materialParams(0x666666, THREE.DoubleSide, texture = Some(texture)))
+
+    scene.add(new Mesh(topWall, wallsTopMaterial))
+    scene.add(new Mesh(wallGeometries, wallsMaterial))
+    floorMesh.foreach(g => scene.add(new Mesh(g, floorMaterial)))
+  }
 
   private def createEasyGeometry(vertices: List[Vector3]): Option[Geometry] =
     vertices match {
@@ -116,15 +83,24 @@ class CaveVisualizerScene(
       case _ =>
         val triangles = THREE.ShapeUtils.triangulateShape(vertices.toJSArray, Nil.toJSArray)
         val faces     = triangles.map(tri => new Face3(tri(0), tri(1), tri(2)))
-        createGeometry(vertices, faces.toList)
-    }
+        val uvs = triangles.map { face =>
+          def vertFn(index: Int) = {
+            val vertex = vertices(index) // TODO ineficient
+            new Vector2(
+              (vertex.x + textureOffset._1) / textureScale._1,
+              (vertex.y + textureOffset._2) / textureScale._2
+            )
+          }
 
-  private def createMeshRaw(vertices: List[Vector3], faces: List[Face3], material: MeshStandardMaterial): Option[Mesh] =
-    createGeometry(vertices, faces).map(new Mesh(_, material))
+          face.map(vertFn)
+        }
+        createGeometry(vertices, faces.toList, uvs)
+    }
 
   private def createGeometry(
     vertices: List[Vector3],
     faces: List[Face3],
+    uvs: Array[Array[Vector2]] = Array(),
   ): Option[Geometry] =
     vertices match {
       case Nil => None
@@ -132,7 +108,16 @@ class CaveVisualizerScene(
         val geom = new Geometry()
         geom.vertices = vertices.toJSArray
         geom.faces = faces.toJSArray
+        geom.faceVertexUvs = List(uvs.toJSArray).toJSArray
         geom.computeFaceNormals()
         Some(geom)
     }
+
+  private def sideWallMesh(side: (Vector3, Vector3)): List[Vector3] = List(
+    side._1,
+    side._2,
+    new Vector3(side._2.x, side._2.y, -wallHeight),
+    new Vector3(side._1.x, side._1.y, -wallHeight),
+  )
+
 }
