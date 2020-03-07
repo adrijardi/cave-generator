@@ -15,13 +15,14 @@ class CaveVisualizerScene(
   val width: Double,
   val height: Double,
   data: immutable.Vector[immutable.Vector[Boolean]],
+  wireframe: Boolean = false,
   val nodeSize: Double = 1d,
   val wallHeight: Double = 2d,
   val textureOffset: (Double, Double) = (0, 0),
   val textureScale: (Double, Double) = (10, 10),
 ) extends Container3D {
 
-  override def distance: Double = 200
+  override def distance: Double = 100
   val caveHeight                = data.length
   val caveWidth                 = data.head.length
 
@@ -68,9 +69,12 @@ class CaveVisualizerScene(
     texture.wrapS = THREE.RepeatWrapping
     texture.wrapT = THREE.RepeatWrapping
 
-    val wallsTopMaterial = new MeshStandardMaterial(materialParams(0xffffff, texture = Some(texture)))
-    val wallsMaterial    = new MeshStandardMaterial(materialParams(0x666666))
-    val floorMaterial    = new MeshStandardMaterial(materialParams(0x666666, THREE.DoubleSide, texture = Some(texture)))
+    val wallsTopMaterial =
+      new MeshStandardMaterial(materialParams(0xffffff, texture = Some(texture), wireframe = wireframe))
+    val wallsMaterial = new MeshStandardMaterial(materialParams(0x666666, wireframe = wireframe))
+    val floorMaterial = new MeshStandardMaterial(
+      materialParams(0x666666, THREE.DoubleSide, texture = Some(texture), wireframe = wireframe)
+    )
 
     scene.add(new Mesh(topWall, wallsTopMaterial))
     scene.add(new Mesh(wallGeometries, wallsMaterial))
