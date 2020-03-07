@@ -35,12 +35,12 @@ class CaveVisualizerScene(
 
   new TextureLoader().load("textures/walls.jpg", texturePromise.success)
 
-  val light = new DirectionalLight(0xffffff, 2)
-  light.position.set(100, 100, -100) //.normalize()
+  val light = new DirectionalLight(0xffffff, .7)
+  light.position.set(2, 1, 4).normalize()
   scene.add(light)
 
-  val light2 = new DirectionalLight(0x6699ff, 1)
-  light.position.set(.5, 3, 1).normalize()
+  val light2 = new DirectionalLight(0x6699ff, .3)
+  light2.position.set(.5, 3, 3).normalize()
   scene.add(light2)
 
   val topWall: Geometry = mergeGeometries {
