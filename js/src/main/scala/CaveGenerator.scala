@@ -14,7 +14,8 @@ object CaveGenerator {
       (1 to smoothSteps).foldLeft(rnd(size))((prev, _) => smooth(prev))
     val walled = wallBorders(smoothed, wallsMargin)
 
-    val rooms       = detectRooms(walled)
+    val rooms = detectRooms(walled)
+
     val culledRooms = rooms.filter(_.tiles.size < minRoomSize)
 
     val keptRooms = rooms -- culledRooms
@@ -85,7 +86,9 @@ object CaveGenerator {
     }
   }
 
-  final case class Room(tiles: Set[(Int, Int)], borders: Set[(Int, Int)])
+  final case class Room(tiles: Set[(Int, Int)], borders: Set[(Int, Int)], center: (Int, Int))
+  final case class FloodFillRoom(tiles: Set[(Int, Int)], borders: Set[(Int, Int)])
+  final case class Passage(tiles: Set[(Int, Int)], borders: Set[(Int, Int)])
 
   private def detectRooms(cave: Vector[Vector[(Int, Int, Boolean)]]): Set[Room] = {
     val roomSpace = cave.flatten.collect {
@@ -110,12 +113,12 @@ object CaveGenerator {
     def isWall(pos: (Int, Int)) = Try(cave(pos._1)(pos._2)).fold(_ => true, _._3)
 
     @tailrec
-    def floodFillRec(currentRoom: Room, toCheck: List[(Int, Int)]): Room =
+    def floodFillRec(currentRoom: FloodFillRoom, toCheck: List[(Int, Int)]): FloodFillRoom =
       toCheck match {
         case (pos @ (x, y)) :: rest if !isWall(x, y) && !currentRoom.tiles.contains(pos) =>
           val neighbours  = squareNeighbours(pos)
           val newBorders  = currentRoom.borders ++ (if (neighbours.exists(isWall)) Set(pos) else Set.empty)
-          val updatedRoom = Room(currentRoom.tiles + pos, newBorders)
+          val updatedRoom = FloodFillRoom(currentRoom.tiles + pos, newBorders)
           floodFillRec(updatedRoom, neighbours ++ rest)
         case _ :: Nil  => currentRoom
         case _ :: rest => floodFillRec(currentRoom, rest)
@@ -124,10 +127,13 @@ object CaveGenerator {
     def squareNeighbours(pos: (Int, Int)): List[(Int, Int)] =
       List((pos._1 - 1, pos._2), (pos._1 + 1, pos._2), (pos._1, pos._2 - 1), (pos._1, pos._2 + 1))
 
-    floodFillRec(Room(Set.empty, Set.empty), List(toCheck))
+    val result    = floodFillRec(FloodFillRoom(Set.empty, Set.empty), List(toCheck))
+    val centerSum = result.borders.reduce((a, b) => (a._1 + b._1, a._2 + b._2))
+    val center    = (centerSum._1 / result.borders.size, centerSum._2 / result.borders.size)
+    Room(result.tiles, result.borders, center)
   }
 
-  case class CaveMap(rooms: Set[Room], passages: Set[Room])
+  case class CaveMap(rooms: Set[Room], passages: Set[Passage])
 
   private def createPassages(rooms: Set[Room]): CaveMap = {
 
@@ -135,36 +141,38 @@ object CaveGenerator {
     def createPassagesRec(
       connected: Set[Room],
       disconnected: Set[Room],
-      passages: Set[Room],
-      distances: List[ClosestMatch]
-    ): Set[Room] =
+      passages: Set[Passage],
+      distances: List[RoomDistance]
+    ): Set[Passage] =
       if (disconnected.isEmpty)
         passages
       else {
         // Find closest rooms where one is connected
-        val closestOp = distances.find(m => connected.contains(m.fromRoom) || connected.contains(m.toRoom))
+        val closestOp = distances.find(distance => connected.contains(distance.a) || connected.contains(distance.b))
 
         if (closestOp.isDefined) {
           val closest = closestOp.get
 
           // If both are connected discard
-          if (connected.contains(closest.fromRoom) && connected.contains(closest.toRoom)) {
+          if (connected.contains(closest.a) && connected.contains(closest.b)) {
             createPassagesRec(connected, disconnected, passages, distances.filterNot(_ == closest))
           } else {
-            val newPassage = passageTiles(closest.fromPos, closest.toPos)
+            val points     = closestPoints(closest.a, closest.b)
+            val newPassage = passageTiles(points.fromPos, points.toPos)
             createPassagesRec(
-              connected + closest.toRoom + closest.fromRoom,
-              disconnected - closest.toRoom - closest.fromRoom,
-              passages + Room(newPassage, newPassage),
+              connected + closest.a + closest.b,
+              disconnected - closest.a - closest.b,
+              passages + Passage(newPassage, newPassage),
               distances.filterNot(_ == closest)
             )
           }
         } else {
           println("Error creating passages")
-          Set.empty[Room]
+          Set.empty[Passage]
         }
       }
 
+    // TODO cleanup?
     final case class ClosestMatch(fromRoom: Room, fromPos: (Int, Int), toRoom: Room, toPos: (Int, Int), distance: Int)
 
     def closestPoints(xa: Room, xb: Room): ClosestMatch = {
@@ -197,8 +205,19 @@ object CaveGenerator {
       passageTilesRec(fromPos, toPos, Set.empty)
     }
 
+    final case class RoomDistance(a: Room, b: Room, distance: Int)
+
     val roomDistances =
-      rooms.toList.combinations(2).map(tuples => closestPoints(tuples(0), tuples(1))).toList.sortBy(_.distance)
+      rooms.toList
+        .combinations(2)
+        .map {
+          case roomA :: roomB :: Nil =>
+            val distance = getDistance(roomA.center, roomB.center)
+            RoomDistance(roomA, roomB, distance)
+        }
+        .toList
+        .sortBy(_.distance)
+
     val passages = createPassagesRec(Set(rooms.head), rooms.drop(1), Set.empty, roomDistances)
     CaveMap(rooms, passages)
   }
