@@ -1,6 +1,6 @@
 import cave.{MarchingSquares, Square}
+import org.denigma.threejs._
 import org.denigma.threejs.extensions.Container3D
-import org.denigma.threejs.{Side, _}
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.collection.immutable
@@ -25,8 +25,8 @@ class CaveVisualizerScene(
     js.Dynamic
       .literal(
         color = new Color(color),
-//        emissive = new Color(0x2a0000),
-//        wireframe = true
+        //        emissive = new Color(0x2a0000),
+        //        wireframe = true
         side = sides,
       )
       .asInstanceOf[MeshStandardMaterialParameters]
@@ -34,19 +34,34 @@ class CaveVisualizerScene(
   val wallsMaterial = new MeshStandardMaterial(materialParams(0x666633))
   val floorMaterial = new MeshStandardMaterial(materialParams(0x333300, THREE.DoubleSide))
 
-//  val materials = List(
-//    material,
-//    new MeshLambertMaterial(materialParams(0xffff00)),
-//    new MeshLambertMaterial(materialParams(0x00ffcc)),
-//    new MeshLambertMaterial(materialParams(0xff00ff)),
-//    new MeshLambertMaterial(materialParams(0xffff66)),
-//    new MeshLambertMaterial(materialParams(0xff66ff)),
-//    new MeshLambertMaterial(materialParams(0x66ffff))
-//  )
+  //  val materials = List(
+  //    material,
+  //    new MeshLambertMaterial(materialParams(0xffff00)),
+  //    new MeshLambertMaterial(materialParams(0x00ffcc)),
+  //    new MeshLambertMaterial(materialParams(0xff00ff)),
+  //    new MeshLambertMaterial(materialParams(0xffff66)),
+  //    new MeshLambertMaterial(materialParams(0xff66ff)),
+  //    new MeshLambertMaterial(materialParams(0x66ffff))
+  //  )
 
-  val meshes = vertices.flatMap((vertices: List[Vector3]) => createMesh(vertices, wallsMaterial))
+  val topWall = vertices.flatMap((vertices: List[Vector3]) => createEasyGeometry(vertices))
 
-  meshes.foreach(scene.add)
+  // TODO utils
+  def mergeGeometries(geom: List[Geometry]): Geometry = {
+    val result = geom.reduce((a, b) => {
+      a.merge(b, new Matrix4(), 0)
+      a
+    })
+    result.mergeVertices()
+    result
+  }
+
+  scene.add(
+    new Mesh(
+      mergeGeometries(topWall),
+      wallsMaterial
+    )
+  )
 
   val light = new DirectionalLight(0xffffff, 2)
   light.position.set(100, 100, -100) //.normalize()
@@ -56,10 +71,10 @@ class CaveVisualizerScene(
   light.position.set(.5, 3, 1).normalize()
   scene.add(light2)
 
-//  val geometry = new BoxGeometry(10, 10, 10, 1, 1, 1);
-////  val material = new MeshBasicMaterial({ color: 0x00ff00 });
-//  val cube = new Mesh(geometry, material);
-//  scene.add(cube);
+  //  val geometry = new BoxGeometry(10, 10, 10, 1, 1, 1);
+  ////  val material = new MeshBasicMaterial({ color: 0x00ff00 });
+  //  val cube = new Mesh(geometry, material);
+  //  scene.add(cube);
 
   // Walls
 
@@ -75,10 +90,11 @@ class CaveVisualizerScene(
     new Vector3(side._1.x, side._1.y, -wallHeight),
   )
 
-  val wallMesh = walls.map(sideWallMesh).flatMap { vertices =>
-    createMeshRaw(vertices, List(new Face3(0, 1, 2), new Face3(2, 3, 0)), wallsMaterial)
+  val wallGeometries = walls.map(sideWallMesh).flatMap { vertices =>
+    createGeometry(vertices, List(new Face3(0, 1, 2), new Face3(2, 3, 0)))
   }
-  wallMesh.foreach(scene.add)
+
+  scene.add(new Mesh(mergeGeometries(wallGeometries), wallsMaterial))
 
   // END walls
 
@@ -94,16 +110,22 @@ class CaveVisualizerScene(
   )
   floorMesh.foreach(scene.add)
 
-  private def createMesh(vertices: List[Vector3], material: MeshStandardMaterial): Option[Mesh] =
+  private def createEasyGeometry(vertices: List[Vector3]): Option[Geometry] =
     vertices match {
       case Nil => None
       case _ =>
         val triangles = THREE.ShapeUtils.triangulateShape(vertices.toJSArray, Nil.toJSArray)
         val faces     = triangles.map(tri => new Face3(tri(0), tri(1), tri(2)))
-        createMeshRaw(vertices, faces.toList, material)
+        createGeometry(vertices, faces.toList)
     }
 
   private def createMeshRaw(vertices: List[Vector3], faces: List[Face3], material: MeshStandardMaterial): Option[Mesh] =
+    createGeometry(vertices, faces).map(new Mesh(_, material))
+
+  private def createGeometry(
+    vertices: List[Vector3],
+    faces: List[Face3],
+  ): Option[Geometry] =
     vertices match {
       case Nil => None
       case _ =>
@@ -111,6 +133,6 @@ class CaveVisualizerScene(
         geom.vertices = vertices.toJSArray
         geom.faces = faces.toJSArray
         geom.computeFaceNormals()
-        Some(new Mesh(geom, material))
+        Some(geom)
     }
 }

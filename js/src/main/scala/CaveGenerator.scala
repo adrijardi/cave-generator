@@ -205,7 +205,7 @@ object CaveGenerator {
         }
         .toList
         .sortBy(_.distance)
-    println("distance")
+
     val passages = createPassagesRec(Set(rooms.head), rooms.drop(1), Set.empty, roomDistances)
     CaveMap(rooms, passages)
   }
