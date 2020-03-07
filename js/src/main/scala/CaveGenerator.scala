@@ -155,10 +155,10 @@ object CaveGenerator {
 
           // If both are connected discard
           if (connected.contains(closest.a) && connected.contains(closest.b)) {
+
             createPassagesRec(connected, disconnected, passages, distances.filterNot(_ == closest))
           } else {
-            val points     = closestPoints(closest.a, closest.b)
-            val newPassage = passageTiles(points.fromPos, points.toPos)
+            val newPassage = passageTiles(closest.a.center, closest.b.center)
             createPassagesRec(
               connected + closest.a + closest.b,
               disconnected - closest.a - closest.b,
@@ -171,18 +171,6 @@ object CaveGenerator {
           Set.empty[Passage]
         }
       }
-
-    // TODO cleanup?
-    final case class ClosestMatch(fromRoom: Room, fromPos: (Int, Int), toRoom: Room, toPos: (Int, Int), distance: Int)
-
-    def closestPoints(xa: Room, xb: Room): ClosestMatch = {
-      val combinations = for {
-        a        <- xa.borders
-        b        <- xb.borders
-        distance = getDistance(a, b)
-      } yield ClosestMatch(xa, a, xb, b, distance)
-      combinations.minBy(_.distance)
-    }
 
     def getDistance(a: (Int, Int), b: (Int, Int)): Int = Math.abs(a._1 - b._1) + Math.abs(a._2 - b._2)
 
@@ -217,7 +205,7 @@ object CaveGenerator {
         }
         .toList
         .sortBy(_.distance)
-
+    println("distance")
     val passages = createPassagesRec(Set(rooms.head), rooms.drop(1), Set.empty, roomDistances)
     CaveMap(rooms, passages)
   }
