@@ -8,12 +8,13 @@ object Cave {
   lazy val elem: HTMLElement = dom.document.body
 
   case class Parameters(
-    width: Int = 25,
-    height: Int = 20,
+    width: Int = 75,
+    height: Int = 50,
     wallMargin: Int = 3,
     smoothSteps: Int = 3,
     minRoomSize: Int = 0,
     createPassages: Boolean = true,
+    wireframe: Boolean = false,
   )
 
   def main(args: Array[String]): Unit = {
@@ -52,6 +53,8 @@ object Cave {
         .getOrElse(defaults.minRoomSize),
       Try(dom.document.getElementById("createPassages").asInstanceOf[html.Input].checked)
         .getOrElse(defaults.createPassages),
+      Try(dom.document.getElementById("wireframe").asInstanceOf[html.Input].checked)
+        .getOrElse(defaults.wireframe),
     )
   }
 
@@ -67,7 +70,8 @@ object Cave {
       container,
       container.clientWidth,
       800,
-      gen
+      gen,
+      parameters.wireframe,
     )
   }
 }
